@@ -1,63 +1,65 @@
-# -*- coding: utf-8 -*-s
 import numpy as np
 from netCDF4 import Dataset, date2num
 import pdb
 import create_timeseries as cts
 import xarray as xar
+import isca_to_ANN as ita
 
-basic_dataset = xar.open_dataset('/home/links/sit204/isca_data_intel/ml_test_no_ml_1/run0001/atmos_monthly.nc', decode_times=False)
+def create_input_file_final(exp_name, month_num):
+    basic_dataset = xar.open_dataset('/home/links/sit204/isca_data_intel/ml_test_no_ml_1/run0001/atmos_monthly.nc', decode_times=False)
 
-pfull = basic_dataset['pfull']
-phalf = basic_dataset['phalf']
+    pfull = basic_dataset['pfull']
+    phalf = basic_dataset['phalf']
 
-bottom_pressure = phalf.max()
+    bottom_pressure = phalf.max()
 
-sigma_full = pfull/bottom_pressure
-sigma_half = phalf/bottom_pressure
+    sigma_full = pfull/bottom_pressure
+    sigma_half = phalf/bottom_pressure
 
-lats = basic_dataset['lat'].values
-lons = basic_dataset['lon'].values
+    lats = basic_dataset['lat'].values
+    lons = basic_dataset['lon'].values
 
-latbs = basic_dataset['latb'].values
-lonbs = basic_dataset['lonb'].values
+    latbs = basic_dataset['latb'].values
+    lonbs = basic_dataset['lonb'].values
 
-variable_name_list = ['tstd', 'qstd']
+    variable_name_list = ['tstd', 'qstd']
 
-tstd_data = np.zeros((40, 64, 128))+10.
-qstd_data = np.zeros((40, 64, 128))+2.
+    #tstd_data = np.zeros((40, 64, 128))+10.
+    #qstd_data = np.zeros((40, 64, 128))+2.
 
-output_data_dict = {'tstd': tstd_data, 'qstd':qstd_data}
+    tstd_data, qstd_data = ita.create_input_file_from_ANN(exp_name, month_num)
 
-#Find grid and time numbers
+    output_data_dict = {'tstd': tstd_data, 'qstd':qstd_data}
 
-nlon=len(lons)
-nlat=len(lats)
+    #Find grid and time numbers
 
-nlonb=len(lonbs)
-nlatb=len(latbs)
+    nlon=len(lons)
+    nlat=len(lats)
 
-npfull=len(sigma_full)
-nphalf=len(sigma_half)
+    nlonb=len(lonbs)
+    nlatb=len(latbs)
 
-
-
-#Output it to a netcdf file. 
-file_name='ml_std_input.nc'
-variable_name='tstd'
-
-number_dict={}
-number_dict['nlat']=nlat
-number_dict['nlon']=nlon
-number_dict['nlatb']=nlatb
-number_dict['nlonb']=nlonb
-number_dict['npfull']=npfull
-number_dict['nphalf']=nphalf
-number_dict['ntime']=0
-
-time_arr = None
-time_units='days since 0000-01-01 00:00:00.0'
+    npfull=len(sigma_full)
+    nphalf=len(sigma_half)
 
 
 
-cts.output_to_file(output_data_dict,lats,lons,latbs,lonbs,sigma_full,sigma_half,time_arr,time_units,file_name,variable_name_list,number_dict)
+    #Output it to a netcdf file. 
+    file_name='ml_std_input.nc'
+    variable_name='tstd'
 
+    number_dict={}
+    number_dict['nlat']=nlat
+    number_dict['nlon']=nlon
+    number_dict['nlatb']=nlatb
+    number_dict['nlonb']=nlonb
+    number_dict['npfull']=npfull
+    number_dict['nphalf']=nphalf
+    number_dict['ntime']=0
+
+    time_arr = None
+    time_units='days since 0000-01-01 00:00:00.0'
+
+
+
+    cts.output_to_file(output_data_dict,lats,lons,latbs,lonbs,sigma_full,sigma_half,time_arr,time_units,file_name,variable_name_list,number_dict)

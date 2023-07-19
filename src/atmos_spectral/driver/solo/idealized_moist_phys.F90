@@ -57,7 +57,7 @@ use  field_manager_mod, only: MODEL_ATMOS
 
 use rayleigh_bottom_drag_mod, only: rayleigh_bottom_drag_init, compute_rayleigh_bottom_drag
 
-use ml_interface_mod, only: ml_interface_init
+use ml_interface_mod, only: ml_interface_init, read_ml_generated_file
 
 #ifdef RRTM_NO_COMPILE
     ! RRTM_NO_COMPILE not included
@@ -150,6 +150,7 @@ real :: raw_bucket = 0.53       ! default raw coefficient for bucket depth LJJ
 ! end RG Add bucket
 
 logical :: read_conv_perturb_input_file = .false.
+logical :: perturb_conv_with_ml =.false.
 
 namelist / idealized_moist_phys_nml / turb, lwet_convection, do_bm, do_ras, roughness_heat,  &
                                       do_cloud_simple,                                       &
@@ -162,7 +163,8 @@ namelist / idealized_moist_phys_nml / turb, lwet_convection, do_bm, do_ras, roug
                                       bucket, init_bucket_depth, init_bucket_depth_land, & !RG Add bucket 
                                       max_bucket_depth_land, robert_bucket, raw_bucket, &
                                       do_socrates_radiation, &
-                                      read_conv_perturb_input_file
+                                      read_conv_perturb_input_file, &
+                                      perturb_conv_with_ml
 
 
 integer, parameter :: num_time_levels = 2 !RG Add bucket - number of time levels added to allow timestepping in this module
@@ -789,7 +791,6 @@ endif
    id_rh = register_diag_field ( mod_name, 'rh',                           &
         axes(1:3), Time, 'relative humidity', 'percent')
 
-
 if (read_conv_perturb_input_file) then
 
     call ml_interface_init(is, ie, js, je, rad_lonb_2d, rad_latb_2d)
@@ -831,11 +832,19 @@ if (bucket) then
   filt      = 0.0                ! RG Add bucket
 endif
 
-if (perturb_conv_with_ml) then
-  call read_ml_generated_file(p_half, num_levels, tstd, qstd)
+tstd=0.
+qstd=0.
 
-  pert_t = tg(:,:,:,previous) + tstd
-  pert_q = grid_tracers(:,:,:,previous,nsphum) + qstd
+if (perturb_conv_with_ml) then
+  call read_ml_generated_file(p_half(:,:,:,previous), p_full(:,:,:,previous), num_levels, tstd, qstd)
+
+  pert_t = tg(:,:,:,previous)
+  pert_q = grid_tracers(:,:,:,previous,nsphum)
+
+else
+
+  pert_t = tg(:,:,:,previous)
+  pert_q = grid_tracers(:,:,:,previous,nsphum) 
 
 endif
 
@@ -845,8 +854,8 @@ select case(r_conv_scheme)
 
 case(SIMPLE_BETTS_CONV)
 
-   call qe_moist_convection ( delta_t,              pert_t,      &
-   pert_q,        p_full(:,:,:,previous),      &
+   call qe_moist_convection ( delta_t,                          pert_t,      &
+                                 pert_q,        p_full(:,:,:,previous),      &
                           p_half(:,:,:,previous),                coldT,      &
                                  rain,                            snow,      &
                            conv_dt_tg,                      conv_dt_qg,      &

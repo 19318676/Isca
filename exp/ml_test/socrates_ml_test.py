@@ -24,7 +24,7 @@ cb= SocratesCodeBase.from_directory(GFDL_BASE)
 # create an Experiment object to handle the configuration of model parameters
 # and output diagnostics
 
-exp = Experiment('ml_test_with_ml_1', codebase=cb)
+exp = Experiment('ml_test_without_ml_1', codebase=cb)
 exp.clear_rundir()
 
 do_simple_global_value = False
@@ -148,6 +148,7 @@ exp.namelist = namelist = Namelist({
         'bucket':True,
         'init_bucket_depth_land':0.15, #Set initial bucket depth over land, default = 20
         'read_conv_perturb_input_file':True,
+        'perturb_conv_with_ml':True,
     },
 
     'ml_interface_nml': {

@@ -4,6 +4,7 @@ import numpy as np
 
 from isca import SocratesCodeBase, DiagTable, Experiment, Namelist, GFDL_BASE
 from isca.util import exp_progress
+import create_std_input as csi
 
 NCORES = 16
 base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -23,13 +24,12 @@ cb= SocratesCodeBase.from_directory(GFDL_BASE)
 
 # create an Experiment object to handle the configuration of model parameters
 # and output diagnostics
-
-exp = Experiment('ml_test_without_ml_1', codebase=cb)
+exp_name = 'ml_test_with_ml_1'
+exp = Experiment(exp_name, codebase=cb)
 exp.clear_rundir()
 
 do_simple_global_value = False
 
-inputfiles = [os.path.join(GFDL_BASE,'input/rrtm_input_files/ozone_1990.nc'), os.path.join(base_dir,'input/era-spectral7_T42_64x128.out.nc'), os.path.join(base_dir,'input/soc_ga3_bucket_jra_55_ice_temps.nc'), os.path.join(base_dir,'input/sp_lw_ga3_1.txt'), os.path.join(base_dir,'input/sp_sw_ga3_0.txt'), os.path.join(base_dir,'input/siconc_clim_amip.nc'), os.path.join(base_dir,'input/ozone_1990_cmip5.nc'), os.path.join(base_dir,'input/ml_generated_std.nc')]
 
 #Tell model how to write diagnostics
 diag = DiagTable()
@@ -99,7 +99,6 @@ diag.add_field('socrates', 'soc_ozone', time_avg=True, files=['atmos_monthly'])
 #diag.add_field('socrates', 'soc_spectral_olr', time_avg=True)
 
 exp.diag_table = diag
-exp.inputfiles = inputfiles
 
 #Define values for the 'core' namelist
 exp.namelist = namelist = Namelist({
@@ -147,8 +146,6 @@ exp.namelist = namelist = Namelist({
        'roughness_moist' : 2.e-04,                  # !Ocean roughness lengths              
         'bucket':True,
         'init_bucket_depth_land':0.15, #Set initial bucket depth over land, default = 20
-        'read_conv_perturb_input_file':True,
-        'perturb_conv_with_ml':True,
     },
 
     'ml_interface_nml': {
@@ -273,12 +270,32 @@ exp.namelist = namelist = Namelist({
 #Lets do a run!
 if __name__=="__main__":
 
+        inputfiles = [os.path.join(GFDL_BASE,'input/rrtm_input_files/ozone_1990.nc'), os.path.join(base_dir,'input/era-spectral7_T42_64x128.out.nc'), os.path.join(base_dir,'input/soc_ga3_bucket_jra_55_ice_temps.nc'), os.path.join(base_dir,'input/sp_lw_ga3_1.txt'), os.path.join(base_dir,'input/sp_sw_ga3_0.txt'), os.path.join(base_dir,'input/siconc_clim_amip.nc'), os.path.join(base_dir,'input/ozone_1990_cmip5.nc'), os.path.join(base_dir,'input/ml_generated_std.nc')]
+        exp.inputfiles = inputfiles
+
         cb.compile()
         exp.set_resolution('T42', 40)
         #Set up the experiment object, with the first argument being the experiment name.
         #This will be the name of the folder that the data will appear in.
         exp.run(1, use_restart=False, num_cores=NCORES, overwrite_data=False)
-        # RUN JOE CODE
+
         for i in range(2,121):
             exp.run(i, num_cores=NCORES, multi_node=False)
-            #RUN JOE CODE
+
+        for i in range(121,241):
+            exp.run(i, num_cores=NCORES, multi_node=False)
+            # print('about to create new file')
+            input_file_name, full_file_path = csi.create_input_file_final(exp_name, i)
+            # print('bingpot')
+
+            exp.inputfiles = [os.path.join(GFDL_BASE,'input/rrtm_input_files/ozone_1990.nc'), os.path.join(base_dir,'input/era-spectral7_T42_64x128.out.nc'), os.path.join(base_dir,'input/soc_ga3_bucket_jra_55_ice_temps.nc'), os.path.join(base_dir,'input/sp_lw_ga3_1.txt'), os.path.join(base_dir,'input/sp_sw_ga3_0.txt'), os.path.join(base_dir,'input/siconc_clim_amip.nc'), os.path.join(base_dir,'input/ozone_1990_cmip5.nc'), full_file_path]
+            exp.update_namelist(
+                {'ml_interface_nml':{
+                    'conv_input_file': input_file_name[:-3]
+                },
+                'idealized_moist_phys_nml':{
+                    'read_conv_perturb_input_file':True,
+                    'perturb_conv_with_ml':True,'
+                }
+                }
+            )

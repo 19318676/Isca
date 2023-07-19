@@ -1,4 +1,4 @@
-name: isca_env
+name: isca_env_tf
 channels:
 - conda-forge
 dependencies:
@@ -18,3 +18,6 @@ dependencies:
 - sh
 - tqdm
 - xarray
+- tensorflow
+- keras
+- netcdf4

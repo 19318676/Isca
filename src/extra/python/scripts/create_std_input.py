@@ -4,7 +4,7 @@ import pdb
 import create_timeseries as cts
 import xarray as xar
 import os
-# import isca_to_ANN as ita
+import isca_to_ANN as ita
 
 def create_input_file_final(exp_name, month_num):
     basic_dataset = xar.open_dataset('/home/links/jc1420/isca_data/ml_test_without_ml_1/run0001/atmos_monthly.nc', decode_times=False)
@@ -25,10 +25,10 @@ def create_input_file_final(exp_name, month_num):
 
     variable_name_list = ['tstd', 'qstd']
 
-    tstd_data = np.zeros((40, 64, 128))+10.
-    qstd_data = np.zeros((40, 64, 128))+2.
+    #tstd_data = np.zeros((40, 64, 128))+10.
+    #qstd_data = np.zeros((40, 64, 128))+2.
 
-    # tstd_data, qstd_data = ita.create_input_file_from_ANN(exp_name, month_num)
+    tstd_data, qstd_data = ita.create_input_file_from_ANN(exp_name, month_num)
 
     output_data_dict = {'tstd': tstd_data, 'qstd':qstd_data}
 

@@ -838,8 +838,8 @@ qstd=0.
 if (perturb_conv_with_ml) then
   call read_ml_generated_file(p_half(:,:,:,previous), p_full(:,:,:,previous), num_levels, tstd, qstd)
 
-  pert_t = tg(:,:,:,previous)
-  pert_q = grid_tracers(:,:,:,previous,nsphum)
+  pert_t = tg(:,:,:,previous) + tstd
+  pert_q = grid_tracers(:,:,:,previous,nsphum) + qstd
 
 else
 

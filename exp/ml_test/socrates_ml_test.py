@@ -295,7 +295,7 @@ if __name__=="__main__":
                 },
                 'idealized_moist_phys_nml':{
                     'read_conv_perturb_input_file':True,
-                    'perturb_conv_with_ml':True,'
+                    'perturb_conv_with_ml':True,
                 }
                 }
             )

@@ -9,8 +9,9 @@ module idealized_moist_phys_mod
 use fms_mod, only: write_version_number, file_exist, close_file, stdlog, error_mesg, NOTE, FATAL, read_data, field_size, uppercase, mpp_pe, check_nml_error
 
 ! cp_air needed for rrtmg and pstd_mks needed for pref calculation
-use           constants_mod, only: grav, rdgas, rvgas, cp_air, PSTD_MKS, dens_h2o 
+use           constants_mod, only: grav, rdgas, rvgas, cp_air, PSTD_MKS, dens_h2o
 
+use        random_numbers_mod, only: getRandomNumbers, initializeRandomNumberStream, randomNumberStream
 use        time_manager_mod, only: time_type, get_time, operator( + )
 
 use    vert_turb_driver_mod, only: vert_turb_driver_init, vert_turb_driver, vert_turb_driver_end
@@ -291,8 +292,9 @@ integer ::           &
      id_u_10m,       & ! used for 10m winds and 2m temp
      id_v_10m,       & ! used for 10m winds and 2m temp
      id_q_2m,        & ! used for 2m specific humidity
-     id_rh_2m          ! used for 2m relative humidity
-
+     id_rh_2m,        & ! used for 2m relative humidity
+     id_pert_q,       &
+     id_pert_t
 integer, allocatable, dimension(:,:) :: convflag ! indicates which qe convection subroutines are used
 real,    allocatable, dimension(:,:) :: rad_lat, rad_lon
 real,    allocatable, dimension(:) :: pref, p_half_1d, ln_p_half_1d, p_full_1d,ln_p_full_1d !s pref is a reference pressure profile, which in 2006 MiMA is just the initial full pressure levels, and an extra level with the reference surface pressure. Others are only necessary to calculate pref.
@@ -309,6 +311,9 @@ integer, dimension(4) :: axes
 integer :: is, ie, js, je, num_levels, nsphum, dt_integer
 real :: dt_real
 type(time_type) :: Time_step
+
+! Added random number stream
+type(randomNumberStream) :: rn_stream
 
 !=================================================================================================================================
 contains
@@ -336,6 +341,7 @@ logical, dimension(:), allocatable :: tracers_in_ras
 
 character(len=80)  :: scheme
 ! End Added for RAS
+
 
 if(module_is_initialized) return
 
@@ -679,6 +685,12 @@ id_q_2m = register_diag_field(mod_name, 'sphum_2m',              &
 id_rh_2m = register_diag_field(mod_name, 'rh_2m',                &
      axes(1:2), Time, 'Relative humidity 2m above surface', 'percent')
 
+if(perturb_conv_with_ml) then
+  id_pert_t = register_diag_field(mod_name, 'pert_t',        &
+    axes(1:3), Time, 'Perturbation profile of temperature','K')
+  id_pert_q = register_diag_field(mod_name, 'pert_q',        &
+    axes(1:3), Time, 'Perturbation profile of specific humidity','kg/kg')
+endif
 select case(r_conv_scheme)
 
 case(SIMPLE_BETTS_CONV)
@@ -794,6 +806,7 @@ endif
 if (read_conv_perturb_input_file) then
 
     call ml_interface_init(is, ie, js, je, rad_lonb_2d, rad_latb_2d)
+    rn_stream = initializeRandomNumberStream(1)
 
 endif
 
@@ -811,6 +824,7 @@ real, dimension(:,:,:,:),   intent(inout) :: dt_tracers
 
 real :: delta_t
 real, dimension(size(ug,1), size(ug,2), size(ug,3)) :: tg_tmp, qg_tmp, RH,tg_interp, mc, dt_ug_conv, dt_vg_conv, tstd, qstd, pert_t, pert_q
+real, dimension(size(ug,1), size(ug,2)) :: rnd_num, rnd_num_T, rnd_num_q
 
 ! Simple cloud scheme variabilies to pass to radiation
 real, dimension(size(ug,1), size(ug,2), size(ug,3))    :: cf_rad, reff_rad, qcl_rad, cca_rad  
@@ -820,6 +834,8 @@ integer, intent(in) , dimension(:,:),   optional :: kbot
 
 real, dimension(1,1,1):: tracer, tracertnd
 integer :: nql, nqi, nqa   ! tracer indices for stratiform clouds
+integer :: i
+
 
 if(current == previous) then
    delta_t = dt_real
@@ -831,16 +847,33 @@ if (bucket) then
   dt_bucket = 0.0                ! RG Add bucket
   filt      = 0.0                ! RG Add bucket
 endif
-
+ ! sets the perturbed values to 0
 tstd=0.
 qstd=0.
-
+ ! If we want the model run to be perturbed then this is used
 if (perturb_conv_with_ml) then
   call read_ml_generated_file(p_half(:,:,:,previous), p_full(:,:,:,previous), num_levels, tstd, qstd)
-
-  pert_t = tg(:,:,:,previous) + tstd
-  pert_q = grid_tracers(:,:,:,previous,nsphum) + qstd
-
+  call getRandomNumbers(rn_stream, rnd_num)
+  ! creates an array of random numbers either 0 or 1
+  rnd_num = nint(rnd_num)
+  !rnd_num_T = rnd_num - 0.5
+  !rnd_num_q = rnd_num - 0.5
+  !rnd_num_T = rnd_num_T*2
+  rnd_num = rnd_num - 0.5
+  rnd_num = rnd_num*2
+  !write(6,*) maxval(rnd_num), minval(rnd_num)
+  ! Adds or subtracts the t and q standard deviation profiles to the perturbed profiles that are used in the convection scheme
+  do i = 1, size(ug,3)
+    pert_t(:,:,i) = tg(:,:,i,previous) + tstd(:,:,i)*rnd_num
+    pert_q(:,:,i) = grid_tracers(:,:,i,previous,nsphum) + qstd(:,:,i)*rnd_num
+  enddo
+  ! Avoids a negative specific humidity (if the SD minused is greater than the initial value)
+  where(pert_q <0)
+    pert_q = 0
+  end where
+  !write(6,*) maxval(pert_q), minval(pert_q), maxval(pert_t), minval(pert_t), maxval(rnd_num), minval(rnd_num)
+  if(id_pert_t > 0) used = send_data(id_pert_t, pert_t, Time)
+  if(id_pert_q > 0) used = send_data(id_pert_q, pert_q, Time)
 else
 
   pert_t = tg(:,:,:,previous)
@@ -1438,5 +1471,4 @@ subroutine rh_calc(pfull,T,qv,RH) !s subroutine copied from 2006 FMS MoistModel 
 END SUBROUTINE rh_calc
 
 !=================================================================================================================================
-
 end module idealized_moist_phys_mod

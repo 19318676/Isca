@@ -24,7 +24,7 @@ cb= SocratesCodeBase.from_directory(GFDL_BASE)
 
 # create an Experiment object to handle the configuration of model parameters
 # and output diagnostics
-exp_name = 'Control_run_no_ml_final'
+exp_name = 'test_1'
 exp = Experiment(exp_name, codebase=cb)
 exp.clear_rundir()
 
@@ -33,9 +33,9 @@ do_simple_global_value = False
 
 #Tell model how to write diagnostics
 diag = DiagTable()
-diag.add_file('atmos_monthly', 30, 'days', time_units='days')
+# diag.add_file('atmos_monthly', 30, 'days', time_units='days')
 # diag.add_file('atmos_pentad', 5, 'days', time_units='days')
-# diag.add_file('atmos_daily', 1, 'days', time_units='days')
+diag.add_file('atmos_daily', 1, 'days', time_units='days')
 
 # diag.add_file('atmos_timestep', 400, 'seconds', time_units='days')
 
@@ -46,55 +46,58 @@ diag.add_field('dynamics', 'bk')
 diag.add_field('dynamics', 'pk')
 diag.add_field('atmosphere', 'precipitation', time_avg=True)
 diag.add_field('atmosphere', 'temp_2m', time_avg=True)
-diag.add_field('atmosphere', 'u_10m', time_avg=True, files=['atmos_monthly'])
-diag.add_field('atmosphere', 'v_10m', time_avg=True, files=['atmos_monthly'])
-diag.add_field('atmosphere', 'rh', time_avg=True, files=['atmos_monthly'])
+diag.add_field('atmosphere', 'u_10m', time_avg=True)
+diag.add_field('atmosphere', 'v_10m', time_avg=True)
+diag.add_field('atmosphere', 'rh', time_avg=True)
 diag.add_field('atmosphere', 'sphum_2m', time_avg=True)
-diag.add_field('atmosphere', 'rh_2m', time_avg=True, files=['atmos_monthly'])
+diag.add_field('atmosphere', 'rh_2m', time_avg=True)
 
-diag.add_field('atmosphere', 'bucket_depth', time_avg=True, files=['atmos_monthly'])
-diag.add_field('atmosphere', 'bucket_depth_cond', time_avg=True, files=['atmos_monthly'])
-diag.add_field('atmosphere', 'bucket_depth_conv', time_avg=True, files=['atmos_monthly'])
-diag.add_field('atmosphere', 'bucket_depth_lh', time_avg=True, files=['atmos_monthly'])
+diag.add_field('atmosphere', 'pert_t', time_avg=True)
+diag.add_field('atmosphere', 'pert_q', time_avg=True)
 
-diag.add_field('mixed_layer', 't_surf', time_avg=True, files=['atmos_monthly'])
-diag.add_field('mixed_layer', 'albedo', time_avg=True, files=['atmos_monthly'])
-diag.add_field('mixed_layer', 'ice_conc', time_avg=True, files=['atmos_monthly'])
-diag.add_field('mixed_layer', 'flux_lhe', time_avg=True, files=['atmos_monthly'])
-diag.add_field('mixed_layer', 'flux_t', time_avg=True, files=['atmos_monthly'])
-diag.add_field('mixed_layer', 'flux_oceanq', time_avg=True, files=['atmos_monthly'])
+diag.add_field('atmosphere', 'bucket_depth', time_avg=True)
+diag.add_field('atmosphere', 'bucket_depth_cond', time_avg=True)
+diag.add_field('atmosphere', 'bucket_depth_conv', time_avg=True)
+diag.add_field('atmosphere', 'bucket_depth_lh', time_avg=True)
+
+diag.add_field('mixed_layer', 't_surf', time_avg=True)
+diag.add_field('mixed_layer', 'albedo', time_avg=True)
+diag.add_field('mixed_layer', 'ice_conc', time_avg=True)
+diag.add_field('mixed_layer', 'flux_lhe', time_avg=True)
+diag.add_field('mixed_layer', 'flux_t', time_avg=True)
+diag.add_field('mixed_layer', 'flux_oceanq', time_avg=True)
 
 diag.add_field('dynamics', 'sphum', time_avg=True)
-diag.add_field('dynamics', 'ucomp', time_avg=True, files=['atmos_monthly'])
-diag.add_field('dynamics', 'vcomp', time_avg=True, files=['atmos_monthly'])
+diag.add_field('dynamics', 'ucomp', time_avg=True)
+diag.add_field('dynamics', 'vcomp', time_avg=True)
 diag.add_field('dynamics', 'temp', time_avg=True)
-diag.add_field('dynamics', 'vor', time_avg=True, files=['atmos_monthly'])
-diag.add_field('dynamics', 'div', time_avg=True, files=['atmos_monthly'])
+diag.add_field('dynamics', 'vor', time_avg=True)
+diag.add_field('dynamics', 'div', time_avg=True)
 diag.add_field('dynamics', 'zsurf', time_avg=True)
 diag.add_field('dynamics', 'height', time_avg=True)
 
-diag.add_field('vert_turb', 'z_pbl', time_avg=True, files=['atmos_monthly'])
+diag.add_field('vert_turb', 'z_pbl', time_avg=True)
 
 #radiative tendencies
-diag.add_field('socrates', 'soc_tdt_lw', time_avg=True, files=['atmos_monthly'])
-diag.add_field('socrates', 'soc_tdt_sw', time_avg=True, files=['atmos_monthly'])
-diag.add_field('socrates', 'soc_tdt_rad', time_avg=True, files=['atmos_monthly'])
+diag.add_field('socrates', 'soc_tdt_lw', time_avg=True)
+diag.add_field('socrates', 'soc_tdt_sw', time_avg=True)
+diag.add_field('socrates', 'soc_tdt_rad', time_avg=True)
 
 #net (up) and down surface fluxes
-diag.add_field('socrates', 'soc_surf_flux_lw', time_avg=True, files=['atmos_monthly'])
-diag.add_field('socrates', 'soc_surf_flux_sw', time_avg=True, files=['atmos_monthly'])
-diag.add_field('socrates', 'soc_surf_flux_lw_down', time_avg=True, files=['atmos_monthly'])
-diag.add_field('socrates', 'soc_surf_flux_sw_down', time_avg=True, files=['atmos_monthly'])
+diag.add_field('socrates', 'soc_surf_flux_lw', time_avg=True)
+diag.add_field('socrates', 'soc_surf_flux_sw', time_avg=True)
+diag.add_field('socrates', 'soc_surf_flux_lw_down', time_avg=True)
+diag.add_field('socrates', 'soc_surf_flux_sw_down', time_avg=True)
 #net (up) TOA and downard fluxes
-diag.add_field('socrates', 'soc_olr', time_avg=True, files=['atmos_monthly'])
-diag.add_field('socrates', 'soc_toa_sw', time_avg=True, files=['atmos_monthly']) 
-diag.add_field('socrates', 'soc_toa_sw_down', time_avg=True, files=['atmos_monthly'])
+diag.add_field('socrates', 'soc_olr', time_avg=True)
+diag.add_field('socrates', 'soc_toa_sw', time_avg=True) 
+diag.add_field('socrates', 'soc_toa_sw_down', time_avg=True)
 
 # additional output options commented out 
 #diag.add_field('socrates', 'soc_flux_lw', time_avg=True)
 #diag.add_field('socrates', 'soc_flux_sw', time_avg=True)
 #diag.add_field('socrates', 'soc_co2', time_avg=True)
-diag.add_field('socrates', 'soc_ozone', time_avg=True, files=['atmos_monthly']) 
+diag.add_field('socrates', 'soc_ozone', time_avg=True) 
 #diag.add_field('socrates', 'soc_coszen', time_avg=True) 
 #diag.add_field('socrates', 'soc_spectral_olr', time_avg=True)
 
@@ -103,7 +106,7 @@ exp.diag_table = diag
 #Define values for the 'core' namelist
 exp.namelist = namelist = Namelist({
     'main_nml':{
-     'days'   : 30,
+     'days'   : 15,
      'hours'  : 0,
      'minutes': 0,
      'seconds': 0,
@@ -283,7 +286,22 @@ if __name__=="__main__":
         #    exp.run(i, num_cores=NCORES, multi_node=False)
         PATH_TO_FILE = '/home/links/jc1420/isca_data/ml_test_with_ml_1/restarts/res0120.tar.gz'
         exp.run(121,  num_cores=NCORES, multi_node=False, use_restart = True, restart_file=PATH_TO_FILE, overwrite_data = False)
-        for i in range(122,241):
+                # print('about to create new file')
+        input_file_name, full_file_path = csi.create_input_file_final(exp_name, 121)
+        # print('bingpot')
+
+        exp.inputfiles = [os.path.join(GFDL_BASE,'input/rrtm_input_files/ozone_1990.nc'), os.path.join(base_dir,'input/era-spectral7_T42_64x128.out.nc'), os.path.join(base_dir,'input/soc_ga3_bucket_jra_55_ice_temps.nc'), os.path.join(base_dir,'input/sp_lw_ga3_1.txt'), os.path.join(base_dir,'input/sp_sw_ga3_0.txt'), os.path.join(base_dir,'input/siconc_clim_amip.nc'), os.path.join(base_dir,'input/ozone_1990_cmip5.nc'), full_file_path]
+        exp.update_namelist(
+            {'ml_interface_nml':{
+                'conv_input_file': input_file_name[:-3]
+            },
+            'idealized_moist_phys_nml':{
+                'read_conv_perturb_input_file':True,
+                'perturb_conv_with_ml':True,
+            }
+            }
+        )
+        for i in range(121,241):
             exp.run(i, num_cores=NCORES, multi_node=False)
             # print('about to create new file')
             input_file_name, full_file_path = csi.create_input_file_final(exp_name, i)
@@ -295,8 +313,8 @@ if __name__=="__main__":
                     'conv_input_file': input_file_name[:-3]
                 },
                 'idealized_moist_phys_nml':{
-                    'read_conv_perturb_input_file':False,
-                    'perturb_conv_with_ml':False,
+                    'read_conv_perturb_input_file':True,
+                    'perturb_conv_with_ml':True,
                 }
                 }
             )

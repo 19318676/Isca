@@ -4,6 +4,10 @@ import numpy as np
 import prediction as pred
 import random
 
+
+#The function needs to be commented out when not in use as we change how often the network stops and produces new perturbation profiles.
+'''
+# Monthly mean data: Function that creates the array to be fed into the neural network and produces the SD profiles
 def create_input_file_from_ANN(exp_name, month_num):
     data_dir = '/emmy-noether/home/jc1420/isca_data'
     file_list = [f'{data_dir}/{exp_name}/run{month_num:04d}/atmos_monthly.nc']
@@ -49,8 +53,104 @@ def create_input_file_from_ANN(exp_name, month_num):
                 q_SD_array[k,j,i] = q_output[k,i+(j*128)]
 
     return T_SD_array, q_SD_array
+'''
+# Half-monthly: Function that creates the array to be fed into the neural network and produces the SD profiles
 
-    
+def create_input_file_from_ANN(exp_name, month_num):
+    data_dir = '/emmy-noether/home/jc1420/isca_data'
+    file_list = [f'{data_dir}/{exp_name}/run{month_num:04d}/atmos_half_monthly.nc']
+
+    dataset = xar.open_mfdataset(file_list, decode_times = False)
+    grid_latitudes = dataset['lat']
+    grid_longitudes = dataset['lon']
+
+    DATA = np.loadtxt('base_isca_array.csv', delimiter = ',', dtype = float)
+    m = 0
+
+
+    for i in range(len(grid_latitudes)):
+        for j in range(len(grid_longitudes)):
+
+            T_array = np.array([dataset['temp'].sel(lat=grid_latitudes[i], lon=grid_longitudes[j])])
+            T_array = np.flip(T_array)
+            q_array = np.array([dataset['sphum'].sel(lat=grid_latitudes[i], lon=grid_longitudes[j])])
+            q_array = np.flip(q_array)
+
+            for k in range(len(T_array[0,0,:])):
+                DATA[k+2, m] = T_array[0,0,k]
+                DATA[k+42,m] = q_array[0,0,k]
+
+            
+            m += 1
+
+    DATA2 = np.copy(DATA)
+    DATA3 = np.copy(DATA2)
+    T_output = pred.predict(DATA[2:,:], 'sigma_T_3_512', 'T')
+    q_output = pred.predict(DATA2[2:,:], 'sigma_q_2_448', 'q')
+
+    T_SD_array = np.zeros((40, 64, 128))
+    for k in range(40):
+        for j in range(len(grid_latitudes)):
+            for i in range(len(grid_longitudes)):
+                T_SD_array[k,j,i] = T_output[k,i+(j*128)]
+
+    q_SD_array = np.zeros((40, 64, 128))
+    for k in range(40):
+        for j in range(len(grid_latitudes)):
+            for i in range(len(grid_longitudes)):
+                q_SD_array[k,j,i] = q_output[k,i+(j*128)]
+
+    return T_SD_array, q_SD_array
+
+'''
+# Daily mean data
+def create_input_file_from_ANN(exp_name, month_num):
+    data_dir = '/emmy-noether/home/jc1420/isca_data'
+    file_list = [f'{data_dir}/{exp_name}/run{month_num:04d}/atmos_daily.nc']
+
+    dataset = xar.open_mfdataset(file_list, decode_times = False)
+    grid_latitudes = dataset['lat']
+    grid_longitudes = dataset['lon']
+
+    DATA = np.loadtxt('base_isca_array.csv', delimiter = ',', dtype = float)
+    m = 0
+
+
+    for i in range(len(grid_latitudes)):
+        for j in range(len(grid_longitudes)):
+
+            T_array = np.array([dataset['temp'].sel(lat=grid_latitudes[i], lon=grid_longitudes[j])[-1,...]])
+            T_array = np.flip(T_array)
+            q_array = np.array([dataset['sphum'].sel(lat=grid_latitudes[i], lon=grid_longitudes[j])[-1,...]])
+            q_array = np.flip(q_array)
+
+            for k in range(len(T_array[0,:])):
+                DATA[k+2, m] = T_array[0,k]
+                DATA[k+42,m] = q_array[0,k]
+
+            
+            m += 1
+
+    DATA2 = np.copy(DATA)
+    DATA3 = np.copy(DATA2)
+    T_output = pred.predict(DATA[2:,:], 'sigma_T_3_512', 'T')
+    q_output = pred.predict(DATA2[2:,:], 'sigma_q_2_448', 'q')
+
+    T_SD_array = np.zeros((40, 64, 128))
+    for k in range(40):
+        for j in range(len(grid_latitudes)):
+            for i in range(len(grid_longitudes)):
+                T_SD_array[k,j,i] = T_output[k,i+(j*128)]
+
+    q_SD_array = np.zeros((40, 64, 128))
+    for k in range(40):
+        for j in range(len(grid_latitudes)):
+            for i in range(len(grid_longitudes)):
+                q_SD_array[k,j,i] = q_output[k,i+(j*128)]
+
+    return T_SD_array, q_SD_array
+
+'''
 '''
 exp_name = 'realistic_continents_fixed_sst_test_experiment'
 

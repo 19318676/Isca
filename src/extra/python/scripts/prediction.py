@@ -17,6 +17,7 @@ import tensorflow as tf
 #import Big_array as BA
 #import cartopy
 
+# Normalises the values based on the training normalisation
 def normal(array):
     normal_values = np.loadtxt('sigma_min_max_9_day.csv', delimiter = ',', dtype = float)
 
@@ -25,6 +26,7 @@ def normal(array):
     
     return array
 
+# Unnormalises the values based on the training normalisation
 def denormal(array, T_or_q):
     normal_values = np.loadtxt('sigma_min_max_9_day.csv', delimiter = ',', dtype = float)
     
@@ -63,7 +65,7 @@ def predict(res):
 
 '''
 
-
+# Takes the ISCA data and creates an arrat of standard deviations for either T or q
 
 def predict(data, model_name, T_or_q):
 # loads an ANN model
@@ -110,6 +112,7 @@ def predict(data, model_name, T_or_q):
     print(f'The min is {mini} and the max is {maxi}')
     return output
 
+# Plots all the unseen true vs predicted values onto a scatter plot
 def scatter_plot(region, NN_name, T_or_q):
     BA = np.loadtxt('sigma_unseen.csv', delimiter = ',', dtype = float)
     pred = predict(NN_name, T_or_q)
@@ -140,6 +143,8 @@ def scatter_plot(region, NN_name, T_or_q):
         plt.scatter(true_array[:,i], pred_array[:,i])
     plt.show()
 
+# Prints the best region for T or q
+
 def best_region(NN_name, T_or_q):
     rmsem1 = 10
     p_val = 0
@@ -168,6 +173,8 @@ def best_region(NN_name, T_or_q):
             pass
     print(f'The best RMSE is for for region {p_val} and is {rmsem1}')
 
+
+# Prints the worst region for T or q
 def worst_region(NN_name, T_or_q):
     rmsem1 = 0
     p_val = 0
@@ -196,7 +203,7 @@ def worst_region(NN_name, T_or_q):
             pass
     print(f'The worst RMSE is for for region {p_val} and is {rmsem1}')
 
-
+# Finds the RMSE for a region, comparing the true and predicted values throughout the layers
 def region_RMSE(NN_name, T_or_q, region_num):
 
     BA = np.loadtxt('sigma_unseen.csv', delimiter = ',', dtype = float)
@@ -215,7 +222,8 @@ def region_RMSE(NN_name, T_or_q, region_num):
     mse = mean_squared_error(true_array, pred_array)
     rmse = math.sqrt(mse)
     return rmse
-            
+
+# Finds the RMSE value for all 80 regions 
 def RMSE_val():
     RMSEs = np.zeros((80,2))
     for i in range(80):

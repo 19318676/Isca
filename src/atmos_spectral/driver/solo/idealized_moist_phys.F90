@@ -859,6 +859,7 @@ if (perturb_conv_with_ml) then
   !rnd_num_T = rnd_num - 0.5
   !rnd_num_q = rnd_num - 0.5
   !rnd_num_T = rnd_num_T*2
+  ! makes the random number either 1 or -1
   rnd_num = rnd_num - 0.5
   rnd_num = rnd_num*2
   !write(6,*) maxval(rnd_num), minval(rnd_num)

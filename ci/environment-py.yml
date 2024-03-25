@@ -10,7 +10,7 @@ dependencies:
 - libgfortran
 - netcdf-fortran
 - numpy
-- openmpi
+- openmpi=4.*
 - pandas
 - python
 - pip
